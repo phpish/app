@@ -277,17 +277,13 @@
 
 		function _request_path()
 		{
-			$request_uri = $_SERVER['REQUEST_URI'];
-			$php_self = $_SERVER['PHP_SELF'];
-
-			$base_path = dirname($php_self);
-
-			if ((1 === strlen($base_path)) and (DIRECTORY_SEPARATOR === $base_path))
+			$path_to_executing_script = dirname($_SERVER['PHP_SELF']);
+			if ((1 === strlen($path_to_executing_script)) and (DIRECTORY_SEPARATOR === $path_to_executing_script))
 			{
-				$base_path = '';
+				$path_to_executing_script = '';
 			}
 
-			$path = substr($request_uri, strlen($base_path));
+			$path = substr($_SERVER['REQUEST_URI'], strlen($path_to_executing_script));
 			list($path, ) = (strpos($path, '?') !== false) ? explode('?', $path, 2) : array($path, '');
 			return $path;
 		}
@@ -309,6 +305,5 @@
 
 			return $headers;
 		}
-
 
 ?>
