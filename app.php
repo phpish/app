@@ -1,7 +1,12 @@
 <?php
 
 	namespace phpish\app;
-	use phpish\request;
+
+
+	register_shutdown_function(function ()
+	{
+		if (!connection_aborted()) respond();
+	});
 
 
 	function any($path)
@@ -79,7 +84,7 @@
 	function next()
 	{
 		$args = func_get_args();
-		if (empty($args)) $args = array(request\msg());
+		if (empty($args)) $args = array(request());
 		$matches = array();
 
 		$handler = _next_handler_match($args[0], $matches);
@@ -114,7 +119,7 @@
 
 				foreach ($handler['paths'] as $path)
 				{
-					if ($path_matched = path_match($path, $req['path'], $matches)) break;
+					if ($path_matched = _path_match($path, $req['path'], $matches)) break;
 				}
 
 				$action_cond_failed = (isset($handler['conds']['action'])
@@ -138,10 +143,91 @@
 				}
 
 
+				function _path_match($path_pattern, $path, &$matches=array())
+				{
+					$regex_pattern = _path_pattern_to_regex_pattern($path_pattern);
+
+					if (1 === preg_match($regex_pattern, $path, $matches))
+					{
+						foreach ($matches as $key=>$val) { if (is_int($key)) { unset($matches[$key]); }}
+						return true;
+					}
+					return false;
+				}
+
+					//TODO: convert all \{ and \} to \x00<curllystart>, \x00<curllyend>
+					function _path_pattern_to_regex_pattern($pattern)
+					{
+						$pattern = _path_pattern_optional_parts_to_regex($pattern);
+						$pattern = _path_pattern_named_parts_to_regex($pattern);
+						$pattern = strtr($pattern, array('/' => '\/'));
+						return "/^$pattern\$/";
+					}
+
+						function _path_pattern_optional_parts_to_regex($pattern)
+						{
+							$optional_parts_pattern = '/\[([^\]\[]*)\]/';
+							$replacement = '(\1)?';
+
+							while (true)
+							{
+								$regex_pattern = preg_replace($optional_parts_pattern, $replacement, $pattern);
+								if ($regex_pattern === $pattern) break;
+								$pattern = $regex_pattern;
+							}
+
+							return $pattern;
+						}
+
+						function _path_pattern_named_parts_to_regex($pattern)
+						{
+							$named_parts = '/{([^}]*)}/';
+							$pattern = preg_replace_callback
+							(
+								$named_parts,
+								function ($matches)
+								{
+									return _path_pattern_named_part_filters_to_regex($matches, _path_pattern_named_part_filters());
+								},
+								$pattern
+							);
+							return $pattern;
+						}
+
+
+								function _path_pattern_named_part_filters_to_regex($matches, $filters)
+								{
+									if (strpos($matches[1], ':') !== false)
+									{
+										list($subpattern_name, $pattern) = explode(':', $matches[1], 2);
+										$pattern = isset($filters[$pattern]) ? $filters[$pattern] : $pattern;
+										return "(?P<$subpattern_name>$pattern)";
+									}
+									else
+									{
+										return "(?P<{$matches[1]}>{$filters['segment']})";
+									}
+								}
+
+								function _path_pattern_named_part_filters()
+								{
+									return array
+									(
+										'word'    => '\w+',
+										'alpha'   => '[a-zA-Z]+',
+										'digits'  => '\d+',
+										'number'  => '\d*.?\d+',
+										'segment' => '[^/]+',
+										'any'     => '.+'
+									);
+								}
+
+
+
 
 	function respond()
 	{
-		next_handler(request\msg());
+		next(request());
 	}
 
 
@@ -152,7 +238,7 @@
 
 	function macro($method, $paths, $conds, $func)
 	{
-		$req = request\msg();
+		$req = request();
 		$handler = _handler_hash($method, $paths, $conds, $func);
 		if (_handler_match($handler, $req, $matches))
 		{
@@ -163,5 +249,66 @@
 			// TODO: else trigger error?
 		}
 	}
+
+
+	function request($override=array())
+	{
+		static $request;
+
+		if (!isset($request))
+		{
+			$body = file_get_contents('php://input');
+			$request = array
+			(
+				'method'=> strtoupper($_SERVER['REQUEST_METHOD']),
+				'path'=> rawurldecode('/'.ltrim(_request_path(), '/')),
+				'query'=> $_GET,
+				'form'=> $_POST,
+				'server_vars'=> $_SERVER,
+				'headers'=> _request_headers(),
+				'body'=> (false === $body) ? NULL : $body
+			);
+		}
+
+		$request = $override + $request;
+		return $request;
+	}
+
+
+		function _request_path()
+		{
+			$request_uri = $_SERVER['REQUEST_URI'];
+			$php_self = $_SERVER['PHP_SELF'];
+
+			$base_path = dirname($php_self);
+
+			if ((1 === strlen($base_path)) and (DIRECTORY_SEPARATOR === $base_path))
+			{
+				$base_path = '';
+			}
+
+			$path = substr($request_uri, strlen($base_path));
+			list($path, ) = (strpos($path, '?') !== false) ? explode('?', $path, 2) : array($path, '');
+			return $path;
+		}
+
+
+		function _request_headers()
+		{
+			if (function_exists('apache_request_headers')) return apache_request_headers();
+
+			$headers = array();
+			foreach ($_SERVER as $key=>$value)
+			{
+				if (preg_match('/^HTTP_(.*)/', $key, $matches))
+				{
+					$header = strtolower(strtr($matches[1], '_', '-'));
+					$headers[$header] = $value;
+				}
+			}
+
+			return $headers;
+		}
+
 
 ?>
