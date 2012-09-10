@@ -227,7 +227,14 @@
 
 	function respond()
 	{
-		next(request());
+		$response = next(request());
+
+		if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
+		{
+			exit_with($response['body'], $response['status_code'], $response['headers']);
+		}
+
+		exit_with($response);
 	}
 
 
