@@ -306,4 +306,140 @@
 			return $headers;
 		}
 
+
+	function _response_reason_phrase($status_code)
+	{
+		$reason_phrase = array
+		(
+			100 => 'Continue',
+			101 => 'Sitching Protocols',
+			200 => 'OK',
+			201 => 'Created',
+			202 => 'Accepted',
+			203 => 'Non-Authoritative Information',
+			204 => 'No Content',
+			205 => 'Reset Content',
+			206 => 'Partial Content',
+			300 => 'Multiple Choices',
+			301 => 'Moved Permanently',
+			302 => 'Found',
+			303 => 'See Other',
+			304 => 'Not Modified',
+			305 => 'Use Proxy',
+			307 => 'Temporary Redirect',
+			400 => 'Bad Request',
+			401 => 'Unauthorized',
+			402 => 'Payment Required',
+			403 => 'Forbidden',
+			404 => 'Not Found',
+			405 => 'Method Not Allowed',
+			406 => 'Not Acceptable',
+			407 => 'Proxy Authentication Required',
+			408 => 'Request Time-out',
+			409 => 'Conflict',
+			410 => 'Gone',
+			411 => 'Length Required',
+			412 => 'Precondition Failed',
+			413 => 'Request Entity Too Large',
+			414 => 'Request-URI Too Long',
+			415 => 'Unsupported Media Type',
+			416 => 'Requested range not satisfiable',
+			417 => 'Expectation Failed',
+			500 => 'Internal Server Error',
+			501 => 'Not Implemented',
+			502 => 'Bad Gateway',
+			503 => 'Service Unavailable',
+			504 => 'Gateway Time-out',
+			505 => 'HTTP Version not supported'
+		);
+
+		return isset($reason_phrase[$status_code]) ? $reason_phrase[$status_code] : '';
+	}
+
+
+	function response($body, $status_code=200, $headers=array())
+	{
+		$headers = array_change_key_case($headers, CASE_LOWER);
+		return compact('status_code', 'headers', 'body');
+	}
+
+	function response_302($url)
+	{
+		return response($url, 302, array('location'=>$url));
+	}
+
+	function response_404($body)
+	{
+		return response($body, 404);
+	}
+
+	function response_500($body)
+	{
+		return response($body, 500);
+	}
+
+
+
+
+	function exit_with($body, $status_code=200, $headers=array())
+	{
+		if (!isset($headers['content-type']))
+		{
+			if (is_string($body) or is_null($body))
+			{
+				$headers['content-type'] = 'text/html';
+			}
+			else
+			{
+				$body = stripslashes(json_encode($body));
+				$headers['content-type'] = 'application/json; charset=utf-8';
+			}
+		}
+
+		flush($status_code, $headers, $body);
+		exit;
+	}
+
+
+	function exit_with_302($url)
+	{
+		exit_with($url, 302, array('location'=>$url));
+	}
+
+	function exit_with_404($body)
+	{
+		exit_with($body, 404);
+	}
+
+	function exit_with_500($body)
+	{
+		exit_with($body, 500);
+	}
+
+
+		function flush($status_code, $headers, $body)
+		{
+			flush_status_line($status_code);
+			flush_headers($headers);
+			flush_body($body);
+		}
+
+			function flush_status_line($status_code)
+			{
+				header("HTTP/1.1 $status_code "._response_reason_phrase($status_code));
+			}
+
+			function flush_headers($headers)
+			{
+				foreach ($headers as $field_name=>$field_value)
+				{
+					header("$field_name: $field_value");
+				}
+			}
+
+			function flush_body($body)
+			{
+				echo $body;
+			}
+
 ?>
