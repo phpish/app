@@ -93,14 +93,12 @@
 		{
 			if (is_callable($handler['func']))
 			{
-				$response = call_user_func_array($handler['func'], array_merge(array($args, $matches)));
+				return call_user_func_array($handler['func'], array_merge(array($args, $matches)));
 			}
-			// TODO: else trigger error?
-
-			return $response;
+			else return response_500("Invalid handler function: {$handler['func']}");
 		}
 
-		// TODO return 404 response. That way user can specify handler that intercepts this and return custom 404 response.
+		return response_404('Matching handler function not found');
 	}
 
 		function _next_handler_match($req, &$matches)
@@ -155,7 +153,7 @@
 					return false;
 				}
 
-					//TODO: convert all \{ and \} to \x00<curllystart>, \x00<curllyend>
+					//TODO: convert all \{ and \} to \x00<curllystart>, \x00<curllyend>?
 					function _path_pattern_to_regex_pattern($pattern)
 					{
 						$pattern = _path_pattern_optional_parts_to_regex($pattern);
@@ -253,7 +251,7 @@
 			{
 				call_user_func_array($handler['func'], array_merge(array($req, $matches)));
 			}
-			// TODO: else trigger error?
+			else trigger_error("Invalid macro handler function: {$handler['func']}", E_USER_ERROR);
 		}
 	}
 
