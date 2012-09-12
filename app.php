@@ -81,19 +81,17 @@
 
 
 
-	function next()
+	function next($req, $data=array())
 	{
-		$args = func_get_args();
-		if (empty($args)) $args = array(request());
 		$matches = array();
-
-		$handler = _next_handler_match($args[0], $matches);
+		$handler = _next_handler_match($req, $matches);
+		$req['matches'] = $matches;
 
 		if (!is_null($handler))
 		{
 			if (is_callable($handler['func']))
 			{
-				return call_user_func_array($handler['func'], array_merge(array($args, $matches)));
+				return call_user_func($handler['func'], $req, $data);
 			}
 			else return response_500("Invalid handler function: {$handler['func']}");
 		}
