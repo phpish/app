@@ -227,15 +227,12 @@
 	{
 		$response = next(request());
 
-		if (!headers_sent())
+		if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
 		{
-			if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
-			{
-				exit_with($response['body'], $response['status_code'], $response['headers']);
-			}
-
-			exit_with($response);
+			exit_with($response['body'], $response['status_code'], $response['headers']);
 		}
+
+		exit_with($response);
 	}
 
 
