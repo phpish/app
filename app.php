@@ -126,6 +126,8 @@
 				                      is_equal(true, $handler['conds']['query']) and
 									  empty($req['query']));
 
+				// TODO: HTTPS cond
+
 				if ($method_matched and $path_matched and !$action_cond_failed and !$query_cond_failed)
 				{
 					return	$handler;
@@ -225,12 +227,15 @@
 	{
 		$response = next(request());
 
-		if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
+		if (!headers_sent())
 		{
-			exit_with($response['body'], $response['status_code'], $response['headers']);
-		}
+			if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
+			{
+				exit_with($response['body'], $response['status_code'], $response['headers']);
+			}
 
-		exit_with($response);
+			exit_with($response);
+		}
 	}
 
 
