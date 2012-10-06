@@ -120,7 +120,7 @@
 
 				$action_cond_failed = (isset($handler['conds']['action'])
 				                      and  (!isset($req['form']['action'])
-										or (strtolower(_underscorize($req['form']['action'])) === $handler['conds']['action'])));
+										or (strtolower(_underscorize($req['form']['action'])) !== $handler['conds']['action'])));
 
 				$query_cond_failed = (isset($handler['conds']['query']) and
 				                      is_equal(true, $handler['conds']['query']) and
