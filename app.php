@@ -103,9 +103,9 @@
 		{
 			static $handlers; if (!isset($handlers)) $handlers = _handlers();
 
-			while ($handler = array_shift($handlers) and ($matched_handler = _handler_match($handler, $req, $matches)))
+			while ($handler = array_shift($handlers))
 			{
-				return $matched_handler;
+				if ($matched_handler = _handler_match($handler, $req, $matches)) return $matched_handler;
 			}
 		}
 
