@@ -2,13 +2,14 @@
 	"name": "phpish/app",
 	"type": "library",
 	"description": "Request Handler",
+	"keywords": [],
 	"homepage": "https://github.com/phpish/app",
 	"license": "MIT",
 	"authors": [
 		{
 			"name": "Sandeep Shetty",
 			"email": "sandeep.shetty@gmail.com",
-			"homepage": "http://sandeep.shetty.in",
+			"homepage": "http://sandeep.shetty.in"
 		}
 	],
 	"require": {
