@@ -364,7 +364,6 @@
 
 	function response($body, $status_code=200, $headers=array())
 	{
-		$headers = array_change_key_case($headers, CASE_LOWER);
 		return compact('status_code', 'headers', 'body');
 	}
 
