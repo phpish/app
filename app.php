@@ -123,7 +123,7 @@
 										or (strtolower(_underscorize($req['form']['action'])) !== $handler['conds']['action'])));
 
 				$query_cond_failed = (isset($handler['conds']['query']) and
-				                      is_equal(true, $handler['conds']['query']) and
+				                      (true === $handler['conds']['query']) and
 									  empty($req['query']));
 
 				// TODO: HTTPS cond
