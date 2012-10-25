@@ -238,18 +238,20 @@
 
 	function path_macro($paths, $func)
 	{
-		handler_macro('*', $paths, array(), $func);
+		macro('*', $paths, array(), $func);
 	}
 
 	function macro($method, $paths, $conds, $func)
 	{
+		if (!is_array($paths)) $paths = array($paths);
 		$req = request();
 		$handler = _handler_hash($method, $paths, $conds, $func);
 		if (_handler_match($handler, $req, $matches))
 		{
 			if (is_callable($handler['func']))
 			{
-				call_user_func_array($handler['func'], array_merge(array($req, $matches)));
+				$req['matches'] = $matches;
+				call_user_func($handler['func'], $req);
 			}
 			else trigger_error("Invalid macro handler function: {$handler['func']}", E_USER_ERROR);
 		}
