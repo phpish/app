@@ -397,7 +397,7 @@
 			}
 			else
 			{
-				$body = stripslashes(json_encode($body));
+				$body = json_encode($body);
 				$headers['content-type'] = 'application/json; charset=utf-8';
 			}
 		}
