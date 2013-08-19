@@ -439,7 +439,7 @@
 			{
 				foreach ($headers as $field_name=>$field_value)
 				{
-					header("$field_name: $field_value");
+					header("$field_name: $field_value", false);
 				}
 			}
 
