@@ -369,6 +369,11 @@
 		return compact('status_code', 'headers', 'body');
 	}
 
+	function response_301($url)
+	{
+    		return response($url, 301, array('location' => $url));
+	}
+
 	function response_302($url)
 	{
 		return response($url, 302, array('location'=>$url));
@@ -384,14 +389,9 @@
 		return response($body, 500);
 	}
 
-	function response_301($url)
-	{
-    		return app\response($url, 301, array('location' => $url));
-	}
-
 	function response_json($values)
 	{
-    		return app\response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
+    		return response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
 	}
 
 
