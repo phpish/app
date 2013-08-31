@@ -384,7 +384,15 @@
 		return response($body, 500);
 	}
 
+	function response_301($url)
+	{
+    		return app\response($url, 301, array('location' => $url));
+	}
 
+	function response_json($values)
+	{
+    		return app\response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
+	}
 
 
 	function exit_with($body, $status_code=200, $headers=array())
