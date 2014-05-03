@@ -27,7 +27,7 @@
 #
 #######################################################################
 
-		RewriteRule  .*  index.php
+		RewriteRule  .*  /index.php
 	</IfModule>
 
 
