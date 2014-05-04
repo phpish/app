@@ -3,6 +3,12 @@
 	namespace phpish\app;
 
 
+	define(__NAMESPACE__.'\ENV', (
+		preg_match('/^127\.0\.0\.1.*/', $_SERVER['HTTP_HOST'])
+		or preg_match('/^localhost.*/', $_SERVER['HTTP_HOST'])
+		or preg_match('/^.*\.dev$/', $_SERVER['HTTP_HOST'])) ? 'development' : 'production');
+
+
 	register_shutdown_function(function ()
 	{
 		if (!connection_aborted()) respond();
