@@ -15,19 +15,18 @@
 	<IfModule mod_rewrite.c>
 
 		RewriteEngine On
-		RewriteCond %{REQUEST_FILENAME} !-f
-		#RewriteCond %{REQUEST_FILENAME} !-d
-		#RewriteCond %{REQUEST_FILENAME} !-s
-		#RewriteCond %{REQUEST_FILENAME} !-l
 
-#######################################################################
-#
-# Change the path below to the location of your index.php
-# file relative to your webservers DocumentRoot.
-#
-#######################################################################
+		RewriteCond %{REQUEST_FILENAME} -f
+		RewriteRule ^.*$ - [L]
 
-		RewriteRule  .*  /index.php
+		# If REQUEST_URI has more than one slash (i.e., this .htaccess is in a subdirectory)
+		# and if the substring of REQUEST_URI starting at the 2nd path segment is the same as the URL-path being matched
+		# then set an env var BASE to the first segment of REQUEST_URI
+		RewriteCond %{REQUEST_URI}::$1 ^(/.+)/(.*)::\2$
+		RewriteRule ^(.*) - [E=BASE:%1]
+
+		RewriteRule  .*  %{ENV:BASE}/index.php
+
 	</IfModule>
 
 
