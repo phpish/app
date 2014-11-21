@@ -380,7 +380,7 @@
 
 	function response_301($url)
 	{
-    		return response($url, 301, array('location' => $url));
+		return response($url, 301, array('location' => $url));
 	}
 
 	function response_302($url)
@@ -400,7 +400,7 @@
 
 	function response_json($values)
 	{
-    		return response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
+		return response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
 	}
 
 
