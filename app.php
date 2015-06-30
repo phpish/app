@@ -8,6 +8,7 @@
 		preg_match('/^127\.0\.0\.1.*/', $_SERVER['HTTP_HOST'])
 		or preg_match('/^localhost.*/', $_SERVER['HTTP_HOST'])
 		or preg_match('/^.*\.dev$/', $_SERVER['HTTP_HOST'])
+		or preg_match('/^dev\..*$/', $_SERVER['HTTP_HOST'])
 
 	) ? 'development' : 'production');
 
