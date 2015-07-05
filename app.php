@@ -398,9 +398,9 @@
 		return response($body, 500);
 	}
 
-	function response_json($values)
+	function response_json($values, $status_code=200)
 	{
-		return response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
+		return response(json_encode($values), $status_code, array('content-type' => 'application/json; charset=utf-8'));
 	}
 
 
@@ -442,6 +442,9 @@
 
 		function flush($status_code, $headers, $body)
 		{
+			if (headers_sent()) {
+        			return;
+    			}
 			flush_status_line($status_code);
 			flush_headers($headers);
 			flush_body($body);
