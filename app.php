@@ -398,12 +398,6 @@
 		return response($body, 500);
 	}
 
-	function response_json($values)
-	{
-		return response(json_encode($values), 200, array('content-type' => 'application/json; charset=utf-8'));
-	}
-
-
 	function exit_with($body, $status_code=200, $headers=array())
 	{
 		if (!isset($headers['content-type']))
