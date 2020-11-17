@@ -2,7 +2,21 @@
 
 	namespace phpish\app;
 
+	function env($custom_envs=[])
+	{
+		$default_envs = [
+			'/^127\.0\.0\.1.*/' => 'development',
+			'/^localhost.*/'    => 'development',
+			'/^.*\.dev$/'       => 'development',
+			'/^dev\..*$/'       => 'development',
+		];
+		$envs = $custom_envs + $default_envs;
+		foreach ($envs as $pattern=>$env_name) if (preg_match($pattern, $_SERVER['HTTP_HOST'])) return $env_name;
 
+		return 'production';
+	}
+
+	//TODO: Deprecate in next major version
 	define(__NAMESPACE__.'\ENV', (
 
 		preg_match('/^127\.0\.0\.1.*/', $_SERVER['HTTP_HOST'])
@@ -63,7 +77,7 @@
 	{
 		if (!is_array($paths)) $paths = array($paths);
 		foreach ($paths as $key=>$val) if (!is_int($key)) _named_paths($key, $val);
-		foreach($funcs as $func) _handlers(_handler_hash($method, $paths, $conds, $func));
+		foreach ($funcs as $func) _handlers(_handler_hash($method, $paths, $conds, $func));
 	}
 
 		function _named_paths($name=NULL, $path=NULL, $reset=false)
