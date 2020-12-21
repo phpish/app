@@ -1,8 +1,8 @@
 <?php
 
 	namespace phpish\app;
-
-	function env($custom_envs=[])
+ 
+	function env($custom_envs=[], $default='production')
 	{
 		$default_envs = [
 			'/^127\.0\.0\.1.*/' => 'development',
@@ -13,7 +13,7 @@
 		$envs = $custom_envs + $default_envs;
 		foreach ($envs as $pattern=>$env_name) if (preg_match($pattern, $_SERVER['HTTP_HOST'])) return $env_name;
 
-		return 'production';
+		return $default;
 	}
 
 	//TODO: Deprecate in next major version
