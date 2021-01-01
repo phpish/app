@@ -1,6 +1,8 @@
 <?php
 
 	namespace phpish\app;
+
+	if ('cli' === PHP_SAPI) return;
  
 	function env($custom_envs=[], $default='production')
 	{
