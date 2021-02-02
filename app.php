@@ -20,7 +20,6 @@
 
 	//TODO: Deprecate in next major version
 	define(__NAMESPACE__.'\ENV', (
-
 		preg_match('/^127\.0\.0\.1.*/', $_SERVER['HTTP_HOST'])
 		or preg_match('/^localhost.*/', $_SERVER['HTTP_HOST'])
 		or preg_match('/^.*\.dev$/', $_SERVER['HTTP_HOST'])
@@ -29,63 +28,57 @@
 	) ? 'development' : 'production');
 
 
-	register_shutdown_function(function ()
-	{
-		if (!connection_aborted()) respond();
-	});
-
-
 	function any($path)
 	{
-		handler('*', $path, array(), array_slice(func_get_args(), 1));
+		handler('*', $path, [], array_slice(func_get_args(), 1));
 	}
 
 	function head($path)
 	{
-		handler('HEAD', $path, array(), array_slice(func_get_args(), 1));
+		handler('HEAD', $path, [], array_slice(func_get_args(), 1));
 	}
 
 	function get($path)
 	{
-		handler('GET', $path, array(), array_slice(func_get_args(), 1));
+		handler('GET', $path, [], array_slice(func_get_args(), 1));
 	}
 
 	function query($path)
 	{
-		handler('GET', $path, array('query'=>true), array_slice(func_get_args(), 1));
+		handler('GET', $path, ['query'=>true], array_slice(func_get_args(), 1));
 	}
 
 	function post($path)
 	{
-		handler('POST', $path, array(), array_slice(func_get_args(), 1));
+		handler('POST', $path, [], array_slice(func_get_args(), 1));
 	}
 
 	function post_action($path, $action)
 	{
-		handler('POST', $path, array('action'=>$action), array_slice(func_get_args(), 2));
+		handler('POST', $path, ['action'=>$action], array_slice(func_get_args(), 2));
 	}
 
 	function put($path)
 	{
-		handler('PUT', $path, array(), array_slice(func_get_args(), 1));
+		handler('PUT', $path, [], array_slice(func_get_args(), 1));
 	}
 
 	function delete($path)
 	{
-		handler('DELETE', $path, array(), array_slice(func_get_args(), 1));
+		handler('DELETE', $path, [], array_slice(func_get_args(), 1));
 	}
 
 	function handler($method, $paths, $conds, $funcs)
 	{
-		if (!is_array($paths)) $paths = array($paths);
+		if (!is_array($paths)) $paths = [$paths];
 		foreach ($paths as $key=>$val) if (!is_int($key)) _named_paths($key, $val);
 		foreach ($funcs as $func) _handlers(_handler_hash($method, $paths, $conds, $func));
 	}
 
 		function _named_paths($name=NULL, $path=NULL, $reset=false)
 		{
-			static $named_paths = array();
-			if ($reset) return $named_paths = array();
+			static $named_paths = [];
+			if ($reset) return $named_paths = [];
 			if (!is_null($name) and is_null($path)) return isset($named_paths[$name]) ? $named_paths[$name] : false;
 			$named_paths[$name] = $path;
 			return $named_paths;
@@ -93,8 +86,8 @@
 
 		function _handlers($handler=NULL, $reset=false)
 		{
-			static $handlers = array();
-			if ($reset) return $handlers = array();
+			static $handlers = [];
+			if ($reset) return $handlers = [];
 			if (is_null($handler)) return $handlers;
 			$handlers[] = $handler;
 			return $handlers;
@@ -106,10 +99,30 @@
 		}
 
 
-
-	function next($req, $data=array())
+	function path_macro($paths, $func)
 	{
-		$matches = array();
+		macro('*', $paths, [], $func);
+	}
+
+	function macro($method, $paths, $conds, $func)
+	{
+		if (!is_array($paths)) $paths = [$paths];
+		$req = request();
+		$handler = _handler_hash($method, $paths, $conds, $func);
+		if (_handler_match($handler, $req, $matches))
+		{
+			if (is_callable($handler['func']))
+			{
+				$req['matches'] = $matches;
+				call_user_func($handler['func'], $req);
+			}
+			else trigger_error("Invalid macro handler function: {$handler['func']}", E_USER_ERROR);
+		}
+	}
+
+	function next($req, $data=[])
+	{
+		$matches = [];
 		$handler = _next_handler_match($req, $matches);
 		$req['matches'] = $matches;
 
@@ -119,7 +132,7 @@
 			{
 				return call_user_func($handler['func'], $req, $data);
 			}
-			else return response_500("Invalid handler function: {$handler['func']}");
+			return response_500("Invalid handler function: {$handler['func']}");
 		}
 
 		return response_404('Matching handler function not found');
@@ -166,8 +179,7 @@
 					return preg_replace('/[^a-zA-Z0-9]/', '_', trim($str));
 				}
 
-
-				function _path_match($path_pattern, $path, &$matches=array())
+				function _path_match($path_pattern, $path, &$matches=[])
 				{
 					$regex_pattern = _path_pattern_to_regex_pattern($path_pattern);
 
@@ -179,12 +191,11 @@
 					return false;
 				}
 
-					//TODO: convert all \{ and \} to \x00<curllystart>, \x00<curllyend>?
 					function _path_pattern_to_regex_pattern($pattern)
 					{
 						$pattern = _path_pattern_optional_parts_to_regex($pattern);
 						$pattern = _path_pattern_named_parts_to_regex($pattern);
-						$pattern = strtr($pattern, array('/' => '\/'));
+						$pattern = strtr($pattern, ['/' => '\/']);
 						return "/^$pattern\$/";
 					}
 
@@ -209,8 +220,7 @@
 							$pattern = preg_replace_callback
 							(
 								$named_parts,
-								function ($matches)
-								{
+								function ($matches) {
 									return _path_pattern_named_part_filters_to_regex($matches, _path_pattern_named_part_filters());
 								},
 								$pattern
@@ -218,81 +228,36 @@
 							return $pattern;
 						}
 
+							function _path_pattern_named_part_filters_to_regex($matches, $filters)
+							{
+								if (strpos($matches[1], ':') === false) return "(?P<{$matches[1]}>{$filters['segment']})";
 
-								function _path_pattern_named_part_filters_to_regex($matches, $filters)
-								{
-									if (strpos($matches[1], ':') !== false)
-									{
-										list($subpattern_name, $pattern) = explode(':', $matches[1], 2);
-										$pattern = isset($filters[$pattern]) ? $filters[$pattern] : $pattern;
-										return "(?P<$subpattern_name>$pattern)";
-									}
-									else
-									{
-										return "(?P<{$matches[1]}>{$filters['segment']})";
-									}
-								}
+								list($subpattern_name, $pattern) = explode(':', $matches[1], 2);
+								$pattern = $filters[$pattern] ?? $pattern;
+								return "(?P<$subpattern_name>$pattern)";
+							}
 
-								function _path_pattern_named_part_filters()
-								{
-									return array
-									(
-										'word'    => '\w+',
-										'alpha'   => '[a-zA-Z]+',
-										'digits'  => '\d+',
-										'number'  => '\d*.?\d+',
-										'segment' => '[^/]+',
-										'any'     => '.+'
-									);
-								}
+							function _path_pattern_named_part_filters()
+							{
+								return [
+									'word'    => '\w+',
+									'alpha'   => '[a-zA-Z]+',
+									'digits'  => '\d+',
+									'number'  => '\d*.?\d+',
+									'segment' => '[^/]+',
+									'any'     => '.+'
+								];
+							}
 
 
-
-
-	function respond()
-	{
-		$response = next(request());
-
-		if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
-		{
-			exit_with($response['body'], $response['status_code'], $response['headers']);
-		}
-
-		exit_with($response);
-	}
-
-
-	function path_macro($paths, $func)
-	{
-		macro('*', $paths, array(), $func);
-	}
-
-	function macro($method, $paths, $conds, $func)
-	{
-		if (!is_array($paths)) $paths = array($paths);
-		$req = request();
-		$handler = _handler_hash($method, $paths, $conds, $func);
-		if (_handler_match($handler, $req, $matches))
-		{
-			if (is_callable($handler['func']))
-			{
-				$req['matches'] = $matches;
-				call_user_func($handler['func'], $req);
-			}
-			else trigger_error("Invalid macro handler function: {$handler['func']}", E_USER_ERROR);
-		}
-	}
-
-
-	function request($override=array())
+	function request($override=[])
 	{
 		static $request;
 
 		if (!isset($request))
 		{
 			$body = file_get_contents('php://input');
-			$request = array
-			(
+			$request = [
 				'method'=> strtoupper($_SERVER['REQUEST_METHOD']),
 				'path'=> rawurldecode('/'.ltrim(_request_path(), '/')),
 				'query'=> $_GET,
@@ -300,13 +265,12 @@
 				'server_vars'=> $_SERVER,
 				'headers'=> _request_headers(),
 				'body'=> (false === $body) ? NULL : $body
-			);
+			];
 		}
 
 		$request = $override + $request;
 		return $request;
 	}
-
 
 		function _request_path()
 		{
@@ -317,16 +281,15 @@
 			}
 
 			$path = substr($_SERVER['REQUEST_URI'], strlen($path_to_executing_script));
-			list($path, ) = (strpos($path, '?') !== false) ? explode('?', $path, 2) : array($path, '');
+			list($path, ) = (strpos($path, '?') !== false) ? explode('?', $path, 2) : [$path, ''];
 			return $path;
 		}
-
 
 		function _request_headers()
 		{
 			if (function_exists('apache_request_headers')) return apache_request_headers();
 
-			$headers = array();
+			$headers = [];
 			foreach ($_SERVER as $key=>$value)
 			{
 				if (preg_match('/^HTTP_(.*)/', $key, $matches))
@@ -342,8 +305,7 @@
 
 	function _response_reason_phrase($status_code)
 	{
-		$reason_phrase = array
-		(
+		$reason_phrase = [
 			100 => 'Continue',
 			101 => 'Sitching Protocols',
 			200 => 'OK',
@@ -384,25 +346,24 @@
 			503 => 'Service Unavailable',
 			504 => 'Gateway Time-out',
 			505 => 'HTTP Version not supported'
-		);
+		];
 
-		return isset($reason_phrase[$status_code]) ? $reason_phrase[$status_code] : '';
+		return $reason_phrase[$status_code] ?? '';
 	}
 
-
-	function response($body, $status_code=200, $headers=array())
+	function response($body, $status_code=200, $headers=[])
 	{
 		return compact('status_code', 'headers', 'body');
 	}
 
 	function response_301($url)
 	{
-		return response($url, 301, array('location' => $url));
+		return response($url, 301, ['location' => $url]);
 	}
 
 	function response_302($url)
 	{
-		return response($url, 302, array('location'=>$url));
+		return response($url, 302, ['location'=>$url]);
 	}
 
 	function response_404($body)
@@ -415,7 +376,22 @@
 		return response($body, 500);
 	}
 
-	function exit_with($body, $status_code=200, $headers=array())
+	function exit_with_302($url)
+	{
+		exit_with($url, 302, ['location'=>$url]);
+	}
+
+	function exit_with_404($body)
+	{
+		exit_with($body, 404);
+	}
+
+	function exit_with_500($body)
+	{
+		exit_with($body, 500);
+	}
+
+	function exit_with($body, $status_code=200, $headers=[])
 	{
 		if (!isset($headers['content-type']))
 		{
@@ -434,23 +410,6 @@
 		exit;
 	}
 
-
-	function exit_with_302($url)
-	{
-		exit_with($url, 302, array('location'=>$url));
-	}
-
-	function exit_with_404($body)
-	{
-		exit_with($body, 404);
-	}
-
-	function exit_with_500($body)
-	{
-		exit_with($body, 500);
-	}
-
-
 		function flush($status_code, $headers, $body)
 		{
 			flush_status_line($status_code);
@@ -467,8 +426,8 @@
 			{
 				foreach ($headers as $field_name=>$field_value)
 				{
-					if (is_array($field_value)) foreach ($field_value as $fv) header("$field_name: $fv", false);
-					else header("$field_name: $field_value", false);
+					if (!is_array($field_value)) header("$field_name: $field_value", false);
+					foreach ($field_value as $fv) header("$field_name: $fv", false);
 				}
 			}
 
@@ -477,4 +436,19 @@
 				echo $body;
 			}
 
-?>
+
+	function _respond()
+	{
+		$response = next(request());
+
+		if (is_array($response) and (isset($response['status_code'], $response['headers'], $response['body'])))
+		{
+			exit_with($response['body'], $response['status_code'], $response['headers']);
+		}
+
+		exit_with($response);
+	}
+	
+	register_shutdown_function(function () {
+		if (!connection_aborted()) _respond();
+	});
