@@ -427,7 +427,7 @@
 				foreach ($headers as $field_name=>$field_value)
 				{
 					if (!is_array($field_value)) header("$field_name: $field_value", false);
-					foreach ($field_value as $fv) header("$field_name: $fv", false);
+					else foreach ($field_value as $fv) header("$field_name: $fv", false);
 				}
 			}
 
